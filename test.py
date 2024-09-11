@@ -1,5 +1,10 @@
-import numpy as np
-from gym import spaces
+import numpy
+from core.GymEnvironment import EliminationEnv
 
-observation_space = spaces.MultiDiscrete(np.ones((10, 10))*4)
-print(type(observation_space.sample()))
+env = EliminationEnv(render_mode="local")
+env.reset(seed=45)
+env.render()
+
+env = EliminationEnv(render_mode="logic")
+env.reset(seed=45)
+env.render()
