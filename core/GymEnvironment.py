@@ -18,6 +18,7 @@ class EliminationEnv(gym.Env):
         self._round = 0
         self._max_round = max_round
         self._board = None
+        self._score = 0
 
         self.observation_space = spaces.MultiDiscrete(
             np.ones((size, size)) * categories
@@ -37,6 +38,7 @@ class EliminationEnv(gym.Env):
                 "steps": self._max_round - self._round,
                 "player": 0,
                 "operation": self._last_operation,
+                "score": [self._score, 0],
                 "ManyTimesEliminateBlocks": self._last_elimination,
                 "ManyTimesNewBlocks": self._last_new,
             }
@@ -79,6 +81,9 @@ class EliminationEnv(gym.Env):
 
         return eliminated_position
 
+    def _get_info(self):
+        return {"score": self._score}
+
     def reset(self, seed=None, board=None):
         super().reset(seed=seed)
 
@@ -86,6 +91,7 @@ class EliminationEnv(gym.Env):
         self._last_new = [[]]
         self._last_elimination = [[]]
         self._last_operation = [[-1, -1], [-1, -1]]
+        self._score = 0
 
         if board is not None:
             self._board = board
@@ -119,7 +125,10 @@ class EliminationEnv(gym.Env):
             for i in range(self.size):
                 for j in range(self.size):
                     self._last_new[0].append([i, j, int(self._board[i][j])])
+            self._last_elimination = [[[]]]
             self._communication()
+
+        return self._board, self._get_info()
 
     def step(self, action):
         self._last_elimination = []
@@ -132,6 +141,7 @@ class EliminationEnv(gym.Env):
         while eliminated_set := self._eliminate_step(self._board):
 
             eliminated_map = np.zeros((20, 20), dtype=np.int32)
+            self._score += len(list(eliminated_set))
             for i in eliminated_set:
                 eliminated_map[int(i / 20)][i % 20] = 1
 
