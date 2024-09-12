@@ -8,7 +8,7 @@ from gym import spaces
 class EliminationEnv(gym.Env):
     metadata = {"render_modes": ["local", "logic", "ai"]}
 
-    def __init__(self, render_mode=None, size=20, categories=4, max_round=100):
+    def __init__(self, render_mode=None, size=20, categories=5, max_round=100):
         assert size >= 3
         self.size = size
         self.categories = categories
@@ -45,19 +45,21 @@ class EliminationEnv(gym.Env):
             )
 
     def render(self):
-        if self.render_mode == "local":
-            for i in range(self.size):
-                print("")
-                for j in range(self.size):
-                    if self._board[i][j] == 0:
-                        print("\033[1;41m  \033[0m", end="")
-                    elif self._board[i][j] == 1:
-                        print("\033[1;43m  \033[0m", end="")
-                    elif self._board[i][j] == 2:
-                        print("\033[1;44m  \033[0m", end="")
-                    elif self._board[i][j] == 3:
-                        print("\033[1;42m  \033[0m", end="")
+        # if self.render_mode == "local":
+        for i in range(self.size):
             print("")
+            for j in range(self.size):
+                if self._board[i][j] == 0:
+                    print("\033[1;41m  \033[0m", end="")
+                elif self._board[i][j] == 1:
+                    print("\033[1;43m  \033[0m", end="")
+                elif self._board[i][j] == 2:
+                    print("\033[1;44m  \033[0m", end="")
+                elif self._board[i][j] == 3:
+                    print("\033[1;42m  \033[0m", end="")
+                elif self._board[i][j] == 4:
+                    print("\033[1;47m  \033[0m", end="")
+        print("")
 
     def _eliminate_step(self, board):
         eliminated_position = set()
@@ -83,7 +85,7 @@ class EliminationEnv(gym.Env):
         self._round = 0
         self._last_new = [[]]
         self._last_elimination = [[]]
-        self._last_operation = [-1, -1, -1, -1]
+        self._last_operation = [[-1, -1], [-1, -1]]
 
         if board is not None:
             self._board = board
@@ -122,7 +124,11 @@ class EliminationEnv(gym.Env):
     def step(self, action):
         self._last_elimination = []
         self._last_new = []
-        self._last_operation = []
+        self._last_operation = [[action[0], action[1]], [action[2], action[3]]]
+        self._board[action[0]][action[1]], self._board[action[2]][action[3]] = (
+            self._board[action[2]][action[3]],
+            self._board[action[0]][action[1]],
+        )
         while eliminated_set := self._eliminate_step(self._board):
 
             eliminated_map = np.zeros((20, 20), dtype=np.int32)
@@ -140,11 +146,24 @@ class EliminationEnv(gym.Env):
             new = self.np_random.integers(
                 0, self.categories, size=(self.size, self.size), dtype=int
             )
-            new_board = np.where(new_board == -1, new, new_board)
+            new_map = new_board == -1
+            new_board = np.where(new_map, new, new_board)
+
+            eliminated = [
+                [int(i / self.size), int(i % self.size)] for i in eliminated_set
+            ]
+            new = []
+            for i in range(self.size):
+                for j in range(self.size):
+                    if new_map[i][j]:
+                        new.append([i, j, int(new_board[i][j])])
+
+            self._last_elimination.append(eliminated)
+            self._last_new.append(new)
 
             self._board = new_board
 
-        round += 1
+        self._round += 1
         self._communication()
 
     def observation_space(self):
