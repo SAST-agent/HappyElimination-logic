@@ -41,27 +41,29 @@ class EliminationEnv(gym.Env):
                 "score": [self._score, 0],
                 "ManyTimesEliminateBlocks": self._last_elimination,
                 "ManyTimesNewBlocks": self._last_new,
+                "StopReason": None
             }
             print(
                 f"communication with judger, content:{json.dumps(return_dict, ensure_ascii=False)}"
             )
 
     def render(self):
-        # if self.render_mode == "local":
-        for i in range(self.size):
-            print("")
-            for j in range(self.size):
-                if self._board[i][j] == 0:
-                    print("\033[1;41m  \033[0m", end="")
-                elif self._board[i][j] == 1:
-                    print("\033[1;43m  \033[0m", end="")
-                elif self._board[i][j] == 2:
-                    print("\033[1;44m  \033[0m", end="")
-                elif self._board[i][j] == 3:
-                    print("\033[1;42m  \033[0m", end="")
-                elif self._board[i][j] == 4:
-                    print("\033[1;47m  \033[0m", end="")
-        print("")
+        if self.render_mode == "local":
+            for i in range(self.size):
+                print("")
+                for j in range(self.size):
+                    if self._board[i][j] == 0:
+                        print("\033[1;41m  \033[0m", end="")
+                    elif self._board[i][j] == 1:
+                        print("\033[1;43m  \033[0m", end="")
+                    elif self._board[i][j] == 2:
+                        print("\033[1;44m  \033[0m", end="")
+                    elif self._board[i][j] == 3:
+                        print("\033[1;42m  \033[0m", end="")
+                    elif self._board[i][j] == 4:
+                        print("\033[1;47m  \033[0m", end="")
+        elif self.render_mode == 'logic':
+            pass
 
     def _eliminate_step(self, board):
         eliminated_position = set()
