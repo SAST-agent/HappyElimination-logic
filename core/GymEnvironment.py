@@ -124,7 +124,6 @@ class EliminationEnv(gym.Env):
                 for j in range(self.size):
                     self._last_new[0].append([i, j, int(self._board[i][j])])
             self._last_elimination = [[[]]]
-            self._communication()
 
         return self._board, self._get_info()
 
@@ -171,8 +170,11 @@ class EliminationEnv(gym.Env):
 
             self._board = new_board
 
-        self._round += 1
-        self._communication()
+        if self.render_mode == 'logic':
+            if player == 1:
+                self._round += 1
+        else:
+            self._round += 1
 
     def observation_space(self):
         pass

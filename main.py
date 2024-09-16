@@ -1,9 +1,8 @@
 import json
 import time
 
-from utils import *
-
-from ..core.GymEnvironment import EliminationEnv
+from core.GymEnvironment import EliminationEnv
+from logic.utils import *
 
 ERROR_MAP = ["RE", "TLE", "OLE"]
 replay_file = None
@@ -71,16 +70,16 @@ if __name__ == "__main__":
     try:
         # 接收judger的初始化信息
         init_info = receive_init_info()
+        replay_file = open(init_info["replay"], 'w')
         # 设置随机种子
         try:
             seed = init_info["config"]["random_seed"]
         except:
             seed = None
 
-        env = EliminationEnv('logic').reset(seed)
+        env = EliminationEnv('logic')
+        env.reset(seed=seed)
         # 每局游戏唯一的游戏状态类，所有的修改应该在此对象中进行
-
-        replay_file = open(init_info["replay"], 'w')
 
         player_type = init_info["player_list"]
 
@@ -135,6 +134,7 @@ if __name__ == "__main__":
 
             if not game_continue:
                 break
+
             player = 1 - player
             state += 1
             if player_type[player] == 1:
@@ -144,11 +144,21 @@ if __name__ == "__main__":
             send_round_info(
                 state,
                 [player],
-                [],
-                [],
+                [player],
+                [info],
             )
+
+        end_state = json.dumps(
+            ["OK" if player_type[0] else "RE",
+             "OK" if player_type[1] else "RE"]
+        )
+        end_info = {
+            "0": 1 if player_type[0] else 0,
+            "1": 1 if player_type[1] else 0,
+        }
+        send_game_end_info(json.dumps(end_info), end_state)
     except Exception as e:
         replay_file.write(traceback.format_exc())
         quit_running("")
 
-    replay_file.close()
+    # replay_file.close()
