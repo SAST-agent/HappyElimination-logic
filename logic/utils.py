@@ -94,8 +94,8 @@ def receive_ai_end_state():
 
 
 # 逻辑向judger发送游戏结束信息
-def send_game_end_info(end_info: str, end_state: str):
-    game_end_info = {"state": -1, "end_info": end_info, "end_state": end_state}
+def send_game_end_info(end_info, end_score):
+    game_end_info = {"state": -1, "end_info": end_info, "end_state": end_score}
     game_end_info_bytes = json.dumps(game_end_info).encode("utf-8")
     send_to_judger(game_end_info_bytes)
 
@@ -115,7 +115,7 @@ def write_debug_into_replay(replay_file, message):
     f.close()
 
 
-def write_end_info(replay_file, env,  message, winner):
+def write_end_info(replay_file, env, message, winner):
     return_dict = {
         "round": env._round,
         "steps": env._max_round - env._round,
@@ -139,3 +139,4 @@ def write_end_info(replay_file, env,  message, winner):
             + "\n"
         )
     f.close()
+
