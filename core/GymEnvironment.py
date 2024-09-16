@@ -138,7 +138,8 @@ class EliminationEnv(gym.Env):
         while eliminated_set := self._eliminate_step(self._board):
 
             eliminated_map = np.zeros((20, 20), dtype=np.int32)
-            self._score += len(list(eliminated_set))
+            # print(eliminated_set)
+            self._score[player] += len(list(eliminated_set))
             for i in eliminated_set:
                 eliminated_map[int(i / 20)][i % 20] = 1
 

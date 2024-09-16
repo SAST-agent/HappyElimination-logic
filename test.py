@@ -1,21 +1,12 @@
 import random
-import sys
 
+from core.GymEnvironment import EliminationEnv
 
-def write_to_judger(msg: str) -> None:
-    """
-    按照4+N协议将消息输出给评测机
+env = EliminationEnv(render_mode='logic')
+env.reset()
 
-    :param msg: 需要输出的消息
-    :type msg: str
-    """
-    sys.stdout.buffer.write(
-        int.to_bytes(len(msg), length=4, byteorder="big", signed=False)
-    )
-    sys.stdout.buffer.write(msg.encode())
-    sys.stdout.buffer.flush()
-
-
-while 1:
-    write_to_judger(
-        f'{random.randint(0, 20)} {random.randint(0, 20)} {random.randint(0, 20)} {random.randint(0, 20)}')
+while (1):
+    env.step([random.randint(0, 19) for i in range(4)], player=0)
+    print(env.render())
+    env.step([random.randint(0, 19) for i in range(4)], player=1)
+    print(env.render())

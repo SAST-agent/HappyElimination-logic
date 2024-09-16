@@ -51,7 +51,9 @@ def interact(env: EliminationEnv, player, enemy_type):
             # 回放文件写入结束信息
             replay_file.write(json.dumps(return_dict, ensure_ascii=False)+"\n")
             return False, return_dict
+
         new_state = env.render()
+        replay_file.write(json.dumps(new_state, ensure_ascii=False)+"\n")
         if new_state['steps']:
             if enemy_type == 0:
                 return True, str(action)
@@ -106,7 +108,7 @@ if __name__ == "__main__":
 
         # 写入初始化json
         init_json = json.dumps(env.render(), ensure_ascii=False)
-        replay_file.write(init_json)
+        replay_file.write(init_json+'\n')
 
         state += 1
 
