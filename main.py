@@ -166,6 +166,6 @@ if __name__ == "__main__":
 
     except Exception as e:
         replay_file.write(traceback.format_exc())
-        quit_running("")
+        quit_running()
 
     # replay_file.close()

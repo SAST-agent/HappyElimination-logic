@@ -100,10 +100,7 @@ def send_game_end_info(end_info, end_score):
     send_to_judger(game_end_info_bytes)
 
 
-def quit_running(replay_file, er):
-    with open(replay_file, "a") as f:
-        f.write(er + "\n")
-    f.close()
+def quit_running():
     end_state = json.dumps(["RE", "RE"])
     end_info = {"0": 0, "1": 0}
     send_game_end_info(json.dumps(end_info), end_state)
@@ -139,4 +136,3 @@ def write_end_info(replay_file, env, message, winner):
             + "\n"
         )
     f.close()
-
