@@ -135,11 +135,13 @@ class EliminationEnv(gym.Env):
             self._board[action[2]][action[3]],
             self._board[action[0]][action[1]],
         )
+
+        reward = 0
         while eliminated_set := self._eliminate_step(self._board):
 
             eliminated_map = np.zeros((20, 20), dtype=np.int32)
             # print(eliminated_set)
-            self._score[player] += len(list(eliminated_set))
+            reward += len(list(eliminated_set))
             for i in eliminated_set:
                 eliminated_map[int(i / 20)][i % 20] = 1
 
@@ -154,6 +156,7 @@ class EliminationEnv(gym.Env):
             new = self.np_random.integers(
                 0, self.categories, size=(self.size, self.size), dtype=int
             )
+
             new_map = new_board == -1
             new_board = np.where(new_map, new, new_board)
 
@@ -171,11 +174,14 @@ class EliminationEnv(gym.Env):
 
             self._board = new_board
 
+        self._score[player] += reward
         if self.render_mode == 'logic':
             if player == 1:
                 self._round += 1
         else:
             self._round += 1
+
+        return
 
     def observation_space(self):
         pass

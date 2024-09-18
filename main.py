@@ -50,7 +50,11 @@ def interact(env: EliminationEnv, player, enemy_type):
             return_dict["StopReason"] = f"Invalid Operation from player {player}, judger returned error {error}."
             # 回放文件写入结束信息
             replay_file.write(json.dumps(return_dict, ensure_ascii=False)+"\n")
-            return False, return_dict
+            end_state = ["OK", "OK"]
+            end_state[player] = "IA"
+            send_game_end_info(json.dumps(
+                {"0": player, "1": 1-player}), end_state)
+            exit()
 
         new_state = env.render()
         replay_file.write(json.dumps(new_state, ensure_ascii=False)+"\n")
@@ -151,14 +155,15 @@ if __name__ == "__main__":
             )
 
         end_state = json.dumps(
-            ["OK" if player_type[0] else "RE",
-             "OK" if player_type[1] else "RE"]
+            ["OK", "OK"]
         )
+        winner = 0 if env._score[0] > env._score[1] else 1
         end_info = {
-            "0": 1 if player_type[0] else 0,
-            "1": 1 if player_type[1] else 0,
+            "0": 1-winner,
+            "1": winner,
         }
         send_game_end_info(json.dumps(end_info), end_state)
+
     except Exception as e:
         replay_file.write(traceback.format_exc())
         quit_running("")
