@@ -92,11 +92,16 @@ if __name__ == "__main__":
         if player_type[0] == 0 or player_type[1] == 0:
             end_dict = env.render()
             end_dict["StopReason"] = "player quit unexpectedly"
-            replay_file.write(json.dumps(end_dict, ensure_ascii=False)+"\n")
+            end_json = json.dumps(end_dict, ensure_ascii=False)
+            replay_file.write(end_json + "\n")
 
             if player_type[1] == 2:
                 time.sleep(SLEEP_TIME)
                 send_to_judger(json.dumps(end_dict), 1)
+            
+            if player_type[0] == 2:
+                time.sleep(SLEEP_TIME)
+                send_to_judger(json.dumps(end_dict), 0)
 
             end_state = json.dumps(
                 ["OK" if player_type[0] else "RE",
@@ -128,7 +133,7 @@ if __name__ == "__main__":
             [0, 1],
             [
                 str(seed) if player_type[0] == 1 else init_json,
-                str(seed) if player_type[0] == 1 else init_json,
+                str(seed) if player_type[1] == 1 else init_json,
             ],
         )
 
