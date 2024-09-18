@@ -127,8 +127,8 @@ if __name__ == "__main__":
             [0],
             [0, 1],
             [
-                str(seed) if player_type[0] == 1 else init_info,
-                str(seed) if player_type[0] == 1 else init_info,
+                str(seed) if player_type[0] == 1 else init_json,
+                str(seed) if player_type[0] == 1 else init_json,
             ],
         )
 
