@@ -91,7 +91,7 @@ class EliminationEnv(gym.Env):
         self._last_new = [[]]
         self._last_elimination = [[]]
         self._last_operation = [[-1, -1], [-1, -1]]
-        self._score = 0
+        self._score = [0, 0]
 
         if board is not None:
             self._board = board
