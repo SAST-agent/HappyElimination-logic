@@ -40,22 +40,12 @@ def send_round_config(time: int, length: int):
     send_to_judger(round_config_bytes)
 
 
-# 逻辑向judger发生地图信息
-def send_map_info(state: int, content: list[str]):
-    round_info = {"state": state, "listen": [],
-                  "player": [0, 1], "content": content}
-    round_info_bytes = json.dumps(round_info).encode("utf-8")
-    send_to_judger(round_info_bytes)
-
-
 # 逻辑向 judger 发送正常回合消息
-def send_round_info(
-    state: int, listen: list[int], player: list[int], content: list[str]
-):
+def send_round_info(state: int, listen: list[int], send: list[int], content: list[str]):
     round_info = {
         "state": state,
         "listen": listen,
-        "player": player,
+        "player": send,
         "content": content,
     }
 

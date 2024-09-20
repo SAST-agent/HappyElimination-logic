@@ -49,14 +49,14 @@ class EliminationEnv(gym.Env):
                         print("\033[1;47m  \033[0m", end="")
         elif self.render_mode == 'logic':
             return_dict = {
-                "round": self._round,
-                "steps": self._max_round - self._round,
-                "player": 0,
+                "round": self._round - 1,
+                "steps": self._max_round - self._round + 1,
+                "player": self._player,
                 "operation": self._last_operation,
                 "score": self._score,
                 "ManyTimesEliminateBlocks": self._last_elimination,
                 "ManyTimesNewBlocks": self._last_new,
-                "StopReason": None
+                "StopReason": None,
             }
             return return_dict
 
@@ -130,6 +130,7 @@ class EliminationEnv(gym.Env):
     def step(self, action, player=0):
         self._last_elimination = []
         self._last_new = []
+        self._player = player
         self._last_operation = [[action[0], action[1]], [action[2], action[3]]]
         self._board[action[0]][action[1]], self._board[action[2]][action[3]] = (
             self._board[action[2]][action[3]],
@@ -175,8 +176,9 @@ class EliminationEnv(gym.Env):
             self._board = new_board
 
         self._score[player] += reward
+
         if self.render_mode == 'logic':
-            if player == 1:
+            if player == 0:
                 self._round += 1
         else:
             self._round += 1

@@ -1,4 +1,5 @@
 import json
+import random
 import time
 
 from core.GymEnvironment import EliminationEnv
@@ -9,7 +10,7 @@ replay_file = None
 SLEEP_TIME = 0.3
 
 
-def interact(env: EliminationEnv, player, enemy_type):
+def interact(env: EliminationEnv, player, enemy_type, self_type):
     '''
     env: 游戏逻辑维护的唯一局面
     player: 目前进行操作的玩家
@@ -33,8 +34,28 @@ def interact(env: EliminationEnv, player, enemy_type):
         # 回放文件写入结束信息
         replay_file.write(json.dumps(return_dict, ensure_ascii=False)+"\n")
 
+        if self_type == 2:
+            send_to_judger(
+                json.dumps(return_dict, ensure_ascii=False).encode("utf-8"), player
+            )
+
+        if enemy_type == 2:
+            send_to_judger(
+                json.dumps(new_state, ensure_ascii=False).encode("utf-8"), 1 - player
+            )
+
+        end_list = ["OK", "OK"]
+        end_list[json.loads(ai_info["content"])["player"]] = ERROR_MAP[
+            json.loads(ai_info["content"])["error"]
+        ]
+        end_info = {
+            "0": json.loads(ai_info["content"])["player"],
+            "1": 1 - json.loads(ai_info["content"])["player"],
+        }
+        send_game_end_info(json.dumps(end_info), json.dumps(end_list))
+
         # 对方AI则直接结束，对方播放器则转发结束信息
-        if enemy_type:
+        if enemy_type == 2:
             return False, return_dict
         return False, None
     else:
@@ -50,6 +71,18 @@ def interact(env: EliminationEnv, player, enemy_type):
             return_dict["StopReason"] = f"Invalid Operation from player {player}, judger returned error {error}."
             # 回放文件写入结束信息
             replay_file.write(json.dumps(return_dict, ensure_ascii=False)+"\n")
+
+            if self_type == 2:
+                send_to_judger(
+                    json.dumps(return_dict, ensure_ascii=False).encode("utf-8"), player
+                )
+
+            if enemy_type == 2:
+                send_to_judger(
+                    json.dumps(new_state, ensure_ascii=False).encode("utf-8"),
+                    1 - player,
+                )
+
             end_state = ["OK", "OK"]
             end_state[player] = "IA"
             send_game_end_info(json.dumps(
@@ -58,16 +91,22 @@ def interact(env: EliminationEnv, player, enemy_type):
 
         new_state = env.render()
         replay_file.write(json.dumps(new_state, ensure_ascii=False)+"\n")
+
+        if self_type == 2:
+            send_to_judger(
+                json.dumps(new_state, ensure_ascii=False).encode("utf-8"), player
+            )
+
         if new_state['steps']:
-            if enemy_type == 0:
+            if enemy_type == 1:
                 return True, str(action)
-            elif enemy_type == 1:
-                return True, str(env.render())
+            elif enemy_type == 2:
+                return True, json.dumps(new_state, ensure_ascii=False)
         else:
-            if enemy_type == 0:
+            if enemy_type == 1:
                 return False, str(action)
-            elif enemy_type == 1:
-                return False, str(env.render())
+            elif enemy_type == 2:
+                return False, json.dumps(new_state, ensure_ascii=False)
 
 
 if __name__ == "__main__":
@@ -81,7 +120,7 @@ if __name__ == "__main__":
         try:
             seed = init_info["config"]["random_seed"]
         except:
-            seed = None
+            seed = random.randint(1, 100000000)
 
         env = EliminationEnv('logic')
         env.reset(seed=seed)
@@ -98,7 +137,7 @@ if __name__ == "__main__":
             if player_type[1] == 2:
                 time.sleep(SLEEP_TIME)
                 send_to_judger(json.dumps(end_dict), 1)
-            
+
             if player_type[0] == 2:
                 time.sleep(SLEEP_TIME)
                 send_to_judger(json.dumps(end_dict), 0)
@@ -141,7 +180,9 @@ if __name__ == "__main__":
         game_continue = True
         while game_continue:
             # send_round_config(state, 1, 1024)
-            game_continue, info = interact(env, player, player_type[1-player])
+            game_continue, info = interact(
+                env, player, player_type[1 - player], player_type[player]
+            )
 
             if not game_continue:
                 break
@@ -163,10 +204,19 @@ if __name__ == "__main__":
             ["OK", "OK"]
         )
         winner = 0 if env._score[0] > env._score[1] else 1
+        end_json = env.render()
+        end_json["StopReason"] = f"player {winner} wins."
         end_info = {
             "0": 1-winner,
             "1": winner,
         }
+
+        if player_type[0] == 2:
+            send_to_judger(json.dumps(end_json, ensure_ascii=False).encode("utf-8"), 0)
+        if player_type[1] == 2:
+            send_to_judger(json.dumps(end_json, ensure_ascii=False).encode("utf-8"), 1)
+
+        replay_file.write(json.dumps(end_json, ensure_ascii=False) + "\n")
         send_game_end_info(json.dumps(end_info), end_state)
 
     except Exception as e:
