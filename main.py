@@ -52,6 +52,8 @@ def interact(env: EliminationEnv, player, enemy_type, self_type):
             "1": 1 - json.loads(ai_info["content"])["player"],
         }
         send_game_end_info(json.dumps(end_info), json.dumps(end_list))
+        replay_file.close()
+        exit()
 
         # 对方AI则直接结束，对方播放器则转发结束信息
         if enemy_type == 2:
@@ -86,7 +88,9 @@ def interact(env: EliminationEnv, player, enemy_type, self_type):
             end_state[player] = "IA"
             send_game_end_info(json.dumps(
                 {"0": player, "1": 1-player}), end_state)
+            replay_file.close()
             exit()
+
 
         new_state = env.render()
         replay_file.write(json.dumps(new_state, ensure_ascii=False)+"\n")
@@ -148,6 +152,8 @@ if __name__ == "__main__":
                 "1": 1 if player_type[1] else 0,
             }
             send_game_end_info(json.dumps(end_info), end_state)
+            replay_file.close()
+            exit()
 
         state = 0
 
@@ -158,9 +164,9 @@ if __name__ == "__main__":
         state += 1
 
         if player_type[0] == 1:
-            send_round_config(1, 1024)
+            send_round_config(2, 1024)
         elif player_type[0] == 2:
-            send_round_config(180, 1024)
+            send_round_config(60, 1024)
 
         # 向双方AI发送初始化信息
         send_round_info(
@@ -189,7 +195,7 @@ if __name__ == "__main__":
             if player_type[player] == 1:
                 send_round_config(1, 1024)
             elif player_type[player] == 2:
-                send_round_config(180, 1024)
+                send_round_config(60, 1024)
             send_round_info(
                 state,
                 [player],
@@ -215,9 +221,12 @@ if __name__ == "__main__":
 
         replay_file.write(json.dumps(end_json, ensure_ascii=False) + "\n")
         send_game_end_info(json.dumps(end_info), end_state)
+        replay_file.close()
+        exit()
 
     except Exception as e:
         replay_file.write(traceback.format_exc())
+        replay_file.write(str(e))
         replay_file.close()
         quit_running()
 
