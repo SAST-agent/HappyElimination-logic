@@ -7,7 +7,6 @@ from logic.utils import *
 
 ERROR_MAP = ["RE", "TLE", "OLE"]
 replay_file = None
-SLEEP_TIME = 0.3
 
 
 def interact(env: EliminationEnv, player, enemy_type, self_type):
@@ -135,11 +134,9 @@ if __name__ == "__main__":
             replay_file.write(end_json + "\n")
 
             if player_type[1] == 2:
-                time.sleep(SLEEP_TIME)
                 send_to_judger(json.dumps(end_dict), 1)
 
             if player_type[0] == 2:
-                time.sleep(SLEEP_TIME)
                 send_to_judger(json.dumps(end_dict), 0)
 
             end_state = json.dumps(
@@ -221,6 +218,7 @@ if __name__ == "__main__":
 
     except Exception as e:
         replay_file.write(traceback.format_exc())
+        replay_file.close()
         quit_running()
 
-    # replay_file.close()
+    replay_file.close()
