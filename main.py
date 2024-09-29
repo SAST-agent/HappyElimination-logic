@@ -53,23 +53,20 @@ def interact(env: EliminationEnv, player, enemy_type, self_type):
         }
         send_game_end_info(json.dumps(end_info), json.dumps(end_list))
         replay_file.close()
-        exit()
-
-        # 对方AI则直接结束，对方播放器则转发结束信息
-        if enemy_type == 2:
-            return False, return_dict
-        return False, None
+        time.sleep(0.5)
+        exit(0)
     else:
-        # 获取操作
-        action = [int(i) for i in ai_info["content"].split(" ")]
-        # 进行操作
         try:
-            # 操作成功
-            env.step(action, player=player)
+            # 获取操作
+            action = [int(i) for i in ai_info["content"].split(" ")]
+            # 进行操作
+            env.step(env.coord_to_num(action), player=player)
         except:
             error = traceback.format_exc()
             return_dict = env.render()
-            return_dict["StopReason"] = f"Invalid Operation from player {player}, judger returned error {error}."
+            return_dict["StopReason"] = (
+                f"Invalid Operation {ai_info['content']} from player {player}, judger returned error {error}."
+            )
             # 回放文件写入结束信息
             replay_file.write(json.dumps(return_dict, ensure_ascii=False)+"\n")
 
@@ -86,11 +83,12 @@ def interact(env: EliminationEnv, player, enemy_type, self_type):
 
             end_state = ["OK", "OK"]
             end_state[player] = "IA"
-            send_game_end_info(json.dumps(
-                {"0": player, "1": 1-player}), end_state)
+            send_game_end_info(
+                json.dumps({"0": player, "1": 1 - player}), json.dumps(end_state)
+            )
             replay_file.close()
-            exit()
-
+            time.sleep(0.5)
+            exit(0)
 
         new_state = env.render()
         replay_file.write(json.dumps(new_state, ensure_ascii=False)+"\n")
@@ -107,9 +105,9 @@ def interact(env: EliminationEnv, player, enemy_type, self_type):
                 return True, json.dumps(new_state, ensure_ascii=False)
         else:
             if enemy_type == 1:
-                return False, str(action)
+                return False, None
             elif enemy_type == 2:
-                return False, json.dumps(new_state, ensure_ascii=False)
+                return False, None
 
 
 if __name__ == "__main__":
@@ -153,7 +151,8 @@ if __name__ == "__main__":
             }
             send_game_end_info(json.dumps(end_info), end_state)
             replay_file.close()
-            exit()
+            time.sleep(1)
+            exit(0)
 
         state = 0
 
@@ -222,7 +221,8 @@ if __name__ == "__main__":
         replay_file.write(json.dumps(end_json, ensure_ascii=False) + "\n")
         send_game_end_info(json.dumps(end_info), end_state)
         replay_file.close()
-        exit()
+        time.sleep(1)
+        exit(0)
 
     except Exception as e:
         replay_file.write(traceback.format_exc())

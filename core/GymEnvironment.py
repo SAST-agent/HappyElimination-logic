@@ -8,7 +8,15 @@ from gym import spaces
 class EliminationEnv(gym.Env):
     metadata = {"render_modes": ["local", "logic", "ai"]}
 
-    def __init__(self, render_mode=None, size=20, categories=5, max_round=100, player=0):
+    def __init__(
+        self,
+        render_mode=None,
+        size=20,
+        categories=5,
+        max_round=100,
+        player=0,
+        compete=True,
+    ):
         assert size >= 3
         self.size = size
         self.categories = categories
@@ -20,14 +28,13 @@ class EliminationEnv(gym.Env):
         self._board = None
         self._score = [0, 0]
         self._player = player
+        self._compete = compete
 
         self.observation_space = spaces.MultiDiscrete(
             np.ones((size, size)) * categories
         )
 
-        self.action_space = spaces.Discrete(
-            4 * 3 * (size - 2) + 8 + (size - 2) * (size - 2) * 4
-        )
+        self.action_space = spaces.Discrete(size**4)
 
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
@@ -131,11 +138,14 @@ class EliminationEnv(gym.Env):
         self._last_elimination = []
         self._last_new = []
         self._player = player
-        self._last_operation = [[action[0], action[1]], [action[2], action[3]]]
-        self._board[action[0]][action[1]], self._board[action[2]][action[3]] = (
-            self._board[action[2]][action[3]],
-            self._board[action[0]][action[1]],
-        )
+
+        d = action % 20
+        c = int(((action - d) / 20) % 20)
+        b = int(((action - c * 20 - d) / 400) % 20)
+        a = int(((action - d - c * 20 - b * 400) / 8000) % 20)
+
+        self._last_operation = [[a, b], [c, d]]
+        self._board[a][b], self._board[c][d] = self._board[c][d], self._board[a][b]
 
         reward = 0
         while eliminated_set := self._eliminate_step(self._board):
@@ -177,16 +187,37 @@ class EliminationEnv(gym.Env):
 
         self._score[player] += reward
 
-        if self.render_mode == 'logic':
+        if self._compete:
             if player == 0:
                 self._round += 1
         else:
             self._round += 1
 
-        return
+        return (self._board, reward, self._round == self._max_round)
 
     def observation_space(self):
-        pass
+        return self.observation_space
 
     def action_space(self):
-        pass
+        return self.action_space
+
+    def num_to_coord(self, action):
+        assert action >= 0 and action <= self.size**4
+        d = action % 20
+        c = int(((action - d) / 20) % 20)
+        b = int(((action - c * 20 - d) / 400) % 20)
+        a = int(((action - d - c * 20 - b * 400) / 8000) % 20)
+        return [a, b, c, d]
+
+    def coord_to_num(self, action):
+        assert (
+            action[0] >= 0
+            and action[0] < self.size
+            and action[1] >= 0
+            and action[1] < self.size
+            and action[2] >= 0
+            and action[2] < self.size
+            and action[3] >= 0
+            and action[3] < self.size
+        )
+        return action[0] * 8000 + action[1] * 400 + action[2] * 20 + action[3]
