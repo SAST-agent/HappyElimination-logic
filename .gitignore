@@ -1,4 +1,4 @@
-core/__pycache__/
+core
 init.json
 # test.py
 replay.jsonl
