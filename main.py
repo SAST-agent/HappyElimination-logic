@@ -40,7 +40,8 @@ def interact(env: EliminationEnv, player, enemy_type, self_type):
 
         if enemy_type == 2:
             send_to_judger(
-                json.dumps(new_state, ensure_ascii=False).encode("utf-8"), 1 - player
+                json.dumps(return_dict, ensure_ascii=False).encode(
+                    "utf-8"), 1 - player
             )
 
         end_list = ["OK", "OK"]
@@ -100,7 +101,7 @@ def interact(env: EliminationEnv, player, enemy_type, self_type):
 
         if new_state['steps']:
             if enemy_type == 1:
-                return True, str(action)
+                return True, f"{action[0]} {action[1]} {action[2]} {action[3]}\n"
             elif enemy_type == 2:
                 return True, json.dumps(new_state, ensure_ascii=False)
         else:
@@ -173,8 +174,8 @@ if __name__ == "__main__":
             [0],
             [0, 1],
             [
-                str(seed) if player_type[0] == 1 else init_json,
-                str(seed) if player_type[1] == 1 else init_json,
+                f"{seed} 0\n" if player_type[0] == 1 else init_json,
+                f"{seed} 1\n" if player_type[1] == 1 else init_json,
             ],
         )
 
