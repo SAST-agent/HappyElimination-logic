@@ -4,22 +4,32 @@ import time
 
 from core.GymEnvironment import EliminationEnv
 from logic.utils import *
+from core.gamedata import *
 
 ERROR_MAP = ["RE", "TLE", "OLE"]
 replay_file = None
 
+class Player():
+    def __init__(
+        self,
+        id,
+        type,
+    ):
+        self.id = id
+        self.action = []
+        self.type = type
 
-def interact(env: EliminationEnv, player, enemy_type, self_type):
+def interact(env: EliminationEnv, self_player, enemy_player):
     '''
     env: 游戏逻辑维护的唯一局面
-    player: 目前进行操作的玩家
-    enemy_type player_type: 0为ai 1为播放器
+    self_player: 当前玩家
+    enemy_player: 对手玩家
     
     输入当前局面 输出要转发给对方的字符串
     '''
     # 收消息
     ai_info = receive_ai_info()
-    while ai_info["player"] != -1 and ai_info["player"] != player:
+    while ai_info["player"] != -1 and ai_info["player"] != self_player.id:
         ai_info = receive_ai_info()
     # 判定交互对象状态
     # 如果交互对象异常则退出
@@ -33,15 +43,14 @@ def interact(env: EliminationEnv, player, enemy_type, self_type):
         # 回放文件写入结束信息
         replay_file.write(json.dumps(return_dict, ensure_ascii=False)+"\n")
 
-        if self_type == 2:
+        if self_player.type == Type.PLAYER:
             send_to_judger(
-                json.dumps(return_dict, ensure_ascii=False).encode("utf-8"), player
+                json.dumps(return_dict, ensure_ascii=False).encode("utf-8"), self_player.id
             )
 
-        if enemy_type == 2:
+        if enemy_player.type == Type.PLAYER:
             send_to_judger(
-                json.dumps(return_dict, ensure_ascii=False).encode(
-                    "utf-8"), 1 - player
+                json.dumps(return_dict, ensure_ascii=False).encode("utf-8"), enemy_player.id
             )
 
         end_list = ["OK", "OK"]
@@ -71,21 +80,20 @@ def interact(env: EliminationEnv, player, enemy_type, self_type):
             # 回放文件写入结束信息
             replay_file.write(json.dumps(return_dict, ensure_ascii=False)+"\n")
 
-            if self_type == 2:
+            if self_player.type == Type.PLAYER:
                 send_to_judger(
-                    json.dumps(return_dict, ensure_ascii=False).encode("utf-8"), player
+                    json.dumps(return_dict, ensure_ascii=False).encode("utf-8"), self_player.id
                 )
 
-            if enemy_type == 2:
+            if enemy_player.type == Type.PLAYER:
                 send_to_judger(
-                    json.dumps(new_state, ensure_ascii=False).encode("utf-8"),
-                    1 - player,
+                    json.dumps(new_state, ensure_ascii=False).encode("utf-8"), enemy_player.id,
                 )
 
             end_state = ["OK", "OK"]
-            end_state[player] = "IA"
+            end_state[self_player.id] = "IA"
             send_game_end_info(
-                json.dumps({"0": player, "1": 1 - player}), json.dumps(end_state)
+                json.dumps({"0": self_player.id, "1": enemy_player.id}), json.dumps(end_state)
             )
             replay_file.close()
             time.sleep(0.5)
@@ -94,20 +102,20 @@ def interact(env: EliminationEnv, player, enemy_type, self_type):
         new_state = env.render()
         replay_file.write(json.dumps(new_state, ensure_ascii=False)+"\n")
 
-        if self_type == 2:
+        if self_player.type == 2:
             send_to_judger(
                 json.dumps(new_state, ensure_ascii=False).encode("utf-8"), player
             )
 
         if new_state['steps']:
-            if enemy_type == 1:
+            if enemy_player.type == 1:
                 return True, f"{action[0]} {action[1]} {action[2]} {action[3]}\n"
-            elif enemy_type == 2:
+            elif enemy_player.type == 2:
                 return True, json.dumps(new_state, ensure_ascii=False)
         else:
-            if enemy_type == 1:
+            if enemy_player.type == 1:
                 return False, None
-            elif enemy_type == 2:
+            elif enemy_player.type == 2:
                 return False, None
 
 
@@ -127,28 +135,28 @@ if __name__ == "__main__":
         env = EliminationEnv('logic')
         env.reset(seed=seed)
         # 每局游戏唯一的游戏状态类，所有的修改应该在此对象中进行
+        
+        players = [Player(0,init_info["player_list"][0]),Player(1,init_info["player_list"][1])]
 
-        player_type = init_info["player_list"]
-
-        if player_type[0] == 0 or player_type[1] == 0:
+        if players[0].type == 0 or players[1].type == 0:
             end_dict = env.render()
             end_dict["StopReason"] = "player quit unexpectedly"
             end_json = json.dumps(end_dict, ensure_ascii=False)
             replay_file.write(end_json + "\n")
 
-            if player_type[1] == 2:
-                send_to_judger(json.dumps(end_dict), 1)
-
-            if player_type[0] == 2:
+            if players[0].type == 2:
                 send_to_judger(json.dumps(end_dict), 0)
 
+            if players[1].type == 2:
+                send_to_judger(json.dumps(end_dict), 1)
+
             end_state = json.dumps(
-                ["OK" if player_type[0] else "RE",
-                    "OK" if player_type[1] else "RE"]
+                ["OK" if players[0].type else "RE",
+                    "OK" if players[1].type else "RE"]
             )
             end_info = {
-                "0": 1 if player_type[0] else 0,
-                "1": 1 if player_type[1] else 0,
+                "0": 1 if players[0].type else 0,
+                "1": 1 if players[1].type else 0,
             }
             send_game_end_info(json.dumps(end_info), end_state)
             replay_file.close()
@@ -163,9 +171,9 @@ if __name__ == "__main__":
 
         state += 1
 
-        if player_type[0] == 1:
+        if players[0].type == 1:
             send_round_config(2, 1024)
-        elif player_type[0] == 2:
+        elif players[0].type == 2:
             send_round_config(60, 1024)
 
         # 向双方AI发送初始化信息
@@ -174,8 +182,8 @@ if __name__ == "__main__":
             [0],
             [0, 1],
             [
-                f"{seed} 0\n" if player_type[0] == 1 else init_json,
-                f"{seed} 1\n" if player_type[1] == 1 else init_json,
+                f"{seed} 0\n" if players[0].type == 1 else init_json,
+                f"{seed} 1\n" if players[1].type == 1 else init_json,
             ],
         )
 
@@ -184,7 +192,7 @@ if __name__ == "__main__":
         while game_continue:
             # send_round_config(state, 1, 1024)
             game_continue, info = interact(
-                env, player, player_type[1 - player], player_type[player]
+                env, player, players[1 - player].type, players[player].type
             )
 
             if not game_continue:
@@ -192,9 +200,9 @@ if __name__ == "__main__":
 
             player = 1 - player
             state += 1
-            if player_type[player] == 1:
+            if players[player].type == 1:
                 send_round_config(1, 1024)
-            elif player_type[player] == 2:
+            elif players[player].type == 2:
                 send_round_config(60, 1024)
             send_round_info(
                 state,
@@ -214,9 +222,9 @@ if __name__ == "__main__":
             "1": winner,
         }
 
-        if player_type[0] == 2:
+        if players[0].type == 2:
             send_to_judger(json.dumps(end_json, ensure_ascii=False).encode("utf-8"), 0)
-        if player_type[1] == 2:
+        if players[1].type == 2:
             send_to_judger(json.dumps(end_json, ensure_ascii=False).encode("utf-8"), 1)
 
         replay_file.write(json.dumps(end_json, ensure_ascii=False) + "\n")
