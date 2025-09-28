@@ -68,9 +68,11 @@ def interact(env: EliminationEnv, self_player, enemy_player):
     else:
         try:
             # 获取操作
-            action = [int(i) for i in ai_info["content"].split(" ")]
+            info = json.loads(ai_info["content"])
+            action = info["action"]
+            skill = info["skill"] % 3
             # 进行操作
-            env.step(env.coord_to_num(action), player=player)
+            env.step(env.coord_to_num(action), skill=skill, player=player)
         except:
             error = traceback.format_exc()
             return_dict = env.render()
